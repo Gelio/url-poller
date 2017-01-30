@@ -39,7 +39,7 @@ describe('Comparator', () => {
       let newValue = 'first line\nsecond line changed';
       let diff = comparator.diffAndUpdate('some key', newValue);
       expect(diff.length).toBeGreaterThan(0);
-      
+
       expect(comparator.getCache().get('some key')).toEqual(newValue);
     });
   });
