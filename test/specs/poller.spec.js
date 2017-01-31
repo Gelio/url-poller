@@ -116,4 +116,59 @@ describe('Poller', () => {
     let poller = new Poller({ interval: 5000, urls: ['a'] });
     expect(poller.stop).toThrow();
   });
+
+  it('should send diffs via observable', (done) => {
+    let interval = 5000;
+    let urls = ['mock-url'];
+    let callCount = 0;
+    // eslint-disable-next-line
+    let request = url => Promise.resolve(`the body of the ${url}, call count ${callCount++}`);
+
+    let poller = new Poller({ interval, urls }, { request });
+
+    let diff$ = poller.getDiffObservable();
+    let diffSubscriber = jasmine.createSpy('diffSubscriber spy');
+    let subscription = diff$.subscribe(diffSubscriber);
+
+    poller.start();
+    // using setImmediate due to native promises in request being asynchronous
+    setImmediate(() => {
+      expect(diffSubscriber).toHaveBeenCalledTimes(urls.length);
+      diffSubscriber.calls.reset();
+
+      jasmine.clock().tick(interval + 100);
+      setImmediate(() => {
+        expect(diffSubscriber).toHaveBeenCalledTimes(urls.length);
+
+        subscription.unsubscribe();
+        done();
+      });
+    });
+  });
+
+  it('should not send diffs when nothing has changed', (done) => {
+    let interval = 5000;
+    let urls = ['mock-url1', 'mock-url2'];
+    let request = url => Promise.resolve(`the body of the ${url}`);
+
+    let poller = new Poller({ interval, urls }, { request });
+
+    let diff$ = poller.getDiffObservable();
+    let diffSubscriber = jasmine.createSpy('diffSubscriber spy');
+    let subscription = diff$.subscribe(diffSubscriber);
+
+    poller.start();
+    setImmediate(() => {
+      expect(diffSubscriber).toHaveBeenCalledTimes(urls.length);
+      diffSubscriber.calls.reset();
+
+      jasmine.clock().tick(interval + 100);
+      setImmediate(() => {
+        expect(diffSubscriber).not.toHaveBeenCalled();
+
+        subscription.unsubscribe();
+        done();
+      });
+    });
+  });
 });
