@@ -27,8 +27,9 @@ export default class Poller {
       throw new Error('URL list is empty');
     }
 
+    this.hasStarted = true;
     this.pollUrls();
-    setInterval(this.pollUrls.bind(this), this.interval);
+    this.intervalID = setInterval(this.pollUrls.bind(this), this.interval);
   }
 
   stop() {
