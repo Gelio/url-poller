@@ -32,6 +32,8 @@
     "jasmine": "^2.5.3"
   },
   "dependencies": {
-    "diff": "^3.2.0"
+    "diff": "^3.2.0",
+    "request": "^2.79.0",
+    "request-promise": "^4.1.1"
   }
 }
