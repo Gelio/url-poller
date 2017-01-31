@@ -1,4 +1,5 @@
 import requestPromise from 'request-promise';
+import { Subject } from 'rxjs';
 import Comparator from './comparator';
 
 const pollerConfig = {
@@ -17,6 +18,8 @@ export default class Poller {
 
     this.hasStarted = false;
     this.isPaused = false;
+
+    this.diffSubject = new Subject();
   }
 
   start() {
@@ -72,8 +75,12 @@ export default class Poller {
 
         let anyUpdates = diff.some(singleDiff => singleDiff.added || singleDiff.removed);
         if (anyUpdates) {
-          // push diff
+          this.diffSubject.next(diff);
         }
       });
+  }
+
+  getDiffObservable() {
+    return this.diffSubject.asObservable();
   }
 }
