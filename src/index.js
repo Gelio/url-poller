@@ -1,3 +1,3 @@
-import Comparator from './comparator';
+import Poller from './poller';
 
-export { Comparator };
+export default Poller;
