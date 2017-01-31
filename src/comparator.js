@@ -1,7 +1,9 @@
+import * as jsDiff from 'diff';
+
 export default class Comparator {
-  constructor(jsDiff) {
+  constructor(_jsDiff = jsDiff) {
     this.cache = new Map();
-    this.jsDiff = jsDiff;
+    this.jsDiff = _jsDiff;
   }
 
   getDiff(key, newValue) {

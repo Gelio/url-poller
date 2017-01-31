@@ -1,12 +1,10 @@
-import * as jsDiff from 'diff';
-
 import Comparator from '../../src/comparator';
 
 describe('Comparator', () => {
   let comparator;
 
   beforeEach(() => {
-    comparator = new Comparator(jsDiff);
+    comparator = new Comparator();
   });
 
   describe('getCache', () => {
