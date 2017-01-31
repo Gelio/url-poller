@@ -2,7 +2,7 @@
   "name": "url-poller",
   "version": "0.1.0",
   "description": "Polls URLs and notifies upon changes",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "jasmine JASMINE_CONFIG_PATH=test/jasmine.json",
     "build": "babel src -d dist",
