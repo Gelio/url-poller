@@ -1,3 +1,3 @@
 import Poller from './poller';
 
-export default Poller;
+export { Poller };
