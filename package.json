@@ -9,7 +9,8 @@
     "watch": "babel src -d dist -w",
     "prepublish": "npm run clean:dist && npm run build",
     "clean:dist": "rm -rf dist",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "coverage": "nyc --reporter=lcov npm test"
   },
   "repository": {
     "type": "git",
@@ -29,7 +30,8 @@
     "eslint-plugin-import": "2.2.0",
     "eslint-plugin-jsx-a11y": "3.0.2",
     "eslint-plugin-react": "6.9.0",
-    "jasmine": "^2.5.3"
+    "jasmine": "^2.5.3",
+    "nyc": "^10.1.2"
   },
   "dependencies": {
     "diff": "^3.2.0",
