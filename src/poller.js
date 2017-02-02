@@ -7,27 +7,29 @@ const pollerConfig = {
 };
 
 export default class Poller {
+
   constructor(
-    { interval = pollerConfig.defaultInterval, urls = [] } = { },
+    { interval = pollerConfig.defaultInterval, requests = [] } = { },
     { request = requestPromise, comparator = new Comparator() } = { },
   ) {
     this.request = request;
     this.comparator = comparator;
     this.interval = interval;
-    this.urls = urls;
+    this.requests = requests;
 
     this.hasStarted = false;
     this.isPaused = false;
 
     this.diffSubject = new Subject();
+    this.errorSubject = new Subject();
   }
 
   start() {
     if (this.hasStarted && !this.isPaused) {
       throw new Error('Poller has already started');
     }
-    if (this.urls.length === 0) {
-      throw new Error('URL list is empty');
+    if (this.requests.length === 0) {
+      throw new Error('Requests list is empty');
     }
 
     this.hasStarted = true;
@@ -61,26 +63,39 @@ export default class Poller {
 
 
   pollUrls() {
-    if (this.urls.length === 0) {
+    if (this.requests.length === 0) {
       this.pause();
     }
 
-    this.urls.forEach(this.pollSingleUrl.bind(this));
+    this.requests.forEach(this.pollSingleUrl.bind(this));
   }
 
-  pollSingleUrl(url) {
-    this.request(url)
+  pollSingleUrl(requestOptions) {
+    this.request(requestOptions)
       .then((body) => {
-        let diff = this.comparator.diffAndUpdate(url, body);
+        let url = typeof requestOptions === 'object' ? requestOptions.url : requestOptions;
+        let isInitialDiff = !this.comparator.has(requestOptions);
+        let diff = this.comparator.diffAndUpdate(requestOptions, body);
 
         let anyUpdates = diff.some(singleDiff => singleDiff.added || singleDiff.removed);
-        if (anyUpdates) {
-          this.diffSubject.next(diff);
+        if (anyUpdates || isInitialDiff) {
+          this.diffSubject.next({
+            isInitialDiff,
+            requestOptions,
+            url,
+            diff,
+            body,
+          });
         }
-      });
+      })
+      .catch(error => this.errorSubject.next(error));
   }
 
   getDiffObservable() {
     return this.diffSubject.asObservable();
+  }
+
+  getErrorObservable() {
+    return this.errorSubject.asObservable();
   }
 }

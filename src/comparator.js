@@ -20,4 +20,8 @@ export default class Comparator {
   getCache() {
     return this.cache;
   }
+
+  has(key) {
+    return this.cache.has(key);
+  }
 }
