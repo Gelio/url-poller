@@ -52,9 +52,6 @@ jspm_packages
 # dotenv environment variables file
 .env
 
-# Distributions directory
-dist
-
 # Additional files not to be included in the package
 *.yml
 .editorconfig
@@ -62,3 +59,4 @@ dist
 .eslintrc.json
 .babelrc
 test
+src
