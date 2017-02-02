@@ -26,7 +26,7 @@ describe('Poller', () => {
     let request = url => Promise.resolve(`the body of the ${url}`);
     let requestSpy = jasmine.createSpy('request spy', request).and.callThrough();
 
-    let poller = new Poller({ interval, urls }, { request: requestSpy });
+    let poller = new Poller({ interval, requests: urls }, { request: requestSpy });
 
     expect(requestSpy).not.toHaveBeenCalled();
     poller.start();
@@ -44,7 +44,7 @@ describe('Poller', () => {
     let request = url => Promise.resolve(`the body of the ${url}`);
     let requestSpy = jasmine.createSpy('request spy', request).and.callThrough();
 
-    let poller = new Poller({ interval, urls }, { request: requestSpy });
+    let poller = new Poller({ interval, requests: urls }, { request: requestSpy });
 
     poller.start();
 
@@ -64,7 +64,7 @@ describe('Poller', () => {
     let request = url => Promise.resolve(`the body of the ${url}`);
     let requestSpy = jasmine.createSpy('request spy', request).and.callThrough();
 
-    let poller = new Poller({ interval, urls }, { request: requestSpy });
+    let poller = new Poller({ interval, requests: urls }, { request: requestSpy });
 
     poller.start();
 
@@ -84,7 +84,7 @@ describe('Poller', () => {
     let request = url => Promise.resolve(`the body of the ${url}`);
     let requestSpy = jasmine.createSpy('requestSpy', request).and.callThrough();
 
-    let poller = new Poller({ interval, urls }, { request: requestSpy });
+    let poller = new Poller({ interval, requests: urls }, { request: requestSpy });
 
     poller.start();
 
@@ -124,7 +124,7 @@ describe('Poller', () => {
     // eslint-disable-next-line
     let request = url => Promise.resolve(`the body of the ${url}, call count ${callCount++}`);
 
-    let poller = new Poller({ interval, urls }, { request });
+    let poller = new Poller({ interval, requests: urls }, { request });
 
     let diff$ = poller.getDiffObservable();
     let diffSubscriber = jasmine.createSpy('diffSubscriber spy');
@@ -151,7 +151,7 @@ describe('Poller', () => {
     let urls = ['mock-url1', 'mock-url2'];
     let request = url => Promise.resolve(`the body of the ${url}`);
 
-    let poller = new Poller({ interval, urls }, { request });
+    let poller = new Poller({ interval, requests: urls }, { request });
 
     let diff$ = poller.getDiffObservable();
     let diffSubscriber = jasmine.createSpy('diffSubscriber spy');
@@ -165,6 +165,64 @@ describe('Poller', () => {
       jasmine.clock().tick(interval + 100);
       setImmediate(() => {
         expect(diffSubscriber).not.toHaveBeenCalled();
+
+        subscription.unsubscribe();
+        done();
+      });
+    });
+  });
+
+  it('should handle the same options as the _request_ library (pass them on)', () => {
+    let interval = 5000;
+    let requests = [
+      {
+        url: 'http://mock-url.com',
+        auth: {
+          user: 'user1',
+          pass: 'secret',
+        },
+      },
+    ];
+
+    let request = (options) => {
+      expect(options).toBeDefined();
+      expect(options.url).toEqual('http://mock-url.com');
+      expect(options.auth.user).toEqual('user1');
+      expect(options.auth.pass).toEqual('secret');
+
+      return Promise.resolve();
+    };
+
+    let poller = new Poller({ interval, requests }, { request });
+    poller.start();
+  });
+
+  it('should include additional information in the observable', (done) => {
+    let interval = 5000;
+    let urls = ['mock-url1'];
+    let request = url => Promise.resolve(`the body of the ${url}`);
+
+    let poller = new Poller({ interval, requests: urls }, { request });
+
+    let diff$ = poller.getDiffObservable();
+    let diffSubscriber = jasmine.createSpy('diffSubscriber spy');
+    let subscription = diff$.subscribe(diffSubscriber);
+
+    poller.start();
+    setImmediate(() => {
+      expect(diffSubscriber).toHaveBeenCalledWith(jasmine.objectContaining({
+        isInitialDiff: true,
+        url: 'mock-url1',
+        diff: jasmine.any(Array),
+      }));
+
+      jasmine.clock().tick(interval + 100);
+      setImmediate(() => {
+        expect(diffSubscriber).toHaveBeenCalledWith(jasmine.objectContaining({
+          isInitialDiff: false,
+          url: 'mock-url1',
+          diff: jasmine.any(Array),
+        }));
 
         subscription.unsubscribe();
         done();
