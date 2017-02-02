@@ -190,7 +190,7 @@ describe('Poller', () => {
       expect(options.auth.user).toEqual('user1');
       expect(options.auth.pass).toEqual('secret');
 
-      return Promise.resolve();
+      return Promise.resolve('response');
     };
 
     let poller = new Poller({ interval, requests }, { request });
@@ -200,7 +200,9 @@ describe('Poller', () => {
   it('should include additional information in the observable', (done) => {
     let interval = 5000;
     let urls = ['mock-url1'];
-    let request = url => Promise.resolve(`the body of the ${url}`);
+    let counter = 0;
+    // eslint-disable-next-line
+    let request = url => Promise.resolve(`the body of the ${url}, ${counter++}`);
 
     let poller = new Poller({ interval, requests: urls }, { request });
 
@@ -215,6 +217,7 @@ describe('Poller', () => {
         url: 'mock-url1',
         diff: jasmine.any(Array),
       }));
+      diffSubscriber.calls.reset();
 
       jasmine.clock().tick(interval + 100);
       setImmediate(() => {
@@ -225,6 +228,52 @@ describe('Poller', () => {
         }));
 
         subscription.unsubscribe();
+        done();
+      });
+    });
+  });
+
+  it('should emit errors on _request_ library errors', (done) => {
+    let interval = 5000;
+    let urls = ['mock-url1', 'mock-url2'];
+    let counter = 0;
+    let request = (url) => {
+      if (url === 'mock-url1') {
+        return Promise.reject(new Error('mock-url1 is forbidden'));
+      }
+
+      // eslint-disable-next-line
+      return Promise.resolve(`Body for ${url}, ${counter++}`);
+    };
+
+    let poller = new Poller({ interval, requests: urls }, { request });
+
+    let diff$ = poller.getDiffObservable();
+    let diffSubscriber = jasmine.createSpy('diffSubscriber spy');
+    let error$ = poller.getErrorObservable();
+    let errorSubscriber = jasmine.createSpy('errorSubscriber spy');
+    let diffSubscription = diff$.subscribe(diffSubscriber);
+    let errorSubscription = error$.subscribe(errorSubscriber);
+
+    poller.start();
+    setImmediate(() => {
+      expect(errorSubscriber).toHaveBeenCalled();
+      expect(diffSubscriber).not.toHaveBeenCalledWith(jasmine.objectContaining({
+        url: 'mock-url1',
+      }));
+      expect(diffSubscriber).toHaveBeenCalledWith(jasmine.objectContaining({
+        url: 'mock-url2',
+      }));
+      errorSubscriber.calls.reset();
+      diffSubscriber.calls.reset();
+
+      jasmine.clock().tick(interval + 100);
+      setImmediate(() => {
+        expect(errorSubscriber).toHaveBeenCalled();
+        expect(diffSubscriber).toHaveBeenCalled();
+
+        errorSubscription.unsubscribe();
+        diffSubscription.unsubscribe();
         done();
       });
     });
