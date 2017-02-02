@@ -14,7 +14,7 @@
   },
   "extends": "airbnb",
   "rules": {
-    "prefer-const": "off",
-    "import/prefer-default-export": "off"
+    "prefer-const": 0,
+    "import/prefer-default-export": 0
   }
 }
