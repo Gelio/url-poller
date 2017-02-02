@@ -1,6 +1,6 @@
 {
   "name": "multiple-url-poller",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Polls URLs and notifies upon changes",
   "main": "dist/index.js",
   "scripts": {
