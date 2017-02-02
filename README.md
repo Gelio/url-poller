@@ -3,6 +3,8 @@
 [![Code Climate](https://codeclimate.com/github/Gelio/url-poller/badges/gpa.svg)](https://codeclimate.com/github/Gelio/url-poller)
 [![Test Coverage](https://codeclimate.com/github/Gelio/url-poller/badges/coverage.svg)](https://codeclimate.com/github/Gelio/url-poller/coverage)
 [![Issue Count](https://codeclimate.com/github/Gelio/url-poller/badges/issue_count.svg)](https://codeclimate.com/github/Gelio/url-poller)
+[![npm](https://img.shields.io/npm/dm/multiple-url-poller.svg)](https://www.npmjs.com/package/multiple-url-poller)
+[![npm](https://img.shields.io/npm/v/multiple-url-poller.svg)](https://www.npmjs.com/package/multiple-url-poller)
 
 A fully customizable url poller and notifier
 
@@ -31,15 +33,13 @@ const Poller = require('multiple-url-poller').Poller;
 
 let interval = 5 * 1000;  // time in ms
 let urls = ['https://time.is/'];
-let poller = new Poller({ interval, urls });
+let poller = new Poller({ interval, requests: urls });
 let diffs$ = poller.getDiffObservable();
 let subscription = diffs$
-  .map(diffs => diffs.filter(singleDiff => singleDiff.added || singleDiff.removed))
-  .subscribe(diffs => console.log('New diff', diffs));
+  .subscribe(changesNotification => console.log('New diff', changesNotification.diff));
 
 poller.start();
 ```
-[See it running in your browser](https://runkit.com/5893290537f788001396a4a3/5893290537f788001396a4a4)
 
 
 
