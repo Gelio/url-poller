@@ -19,19 +19,27 @@ A fully customizable url poller and notifier
 
 
 
-# Installation
-```
+# Set up
+In the console run:
+``` bash
 npm install multiple-url-poller
+```
+
+Include the poller:
+``` javascript
+const Poller = require('multiple-url-poller').Poller;
 ```
 
 
 
 
 # Example
+## Polling a website that displays current time and log diffs to the console
+
 ``` javascript
 const Poller = require('multiple-url-poller').Poller;
 
-let interval = 5 * 1000;  // time in ms
+let interval = 5 * 1000;  // time in miliseconds
 let urls = ['https://time.is/'];
 let poller = new Poller({ interval, requests: urls });
 let diffs$ = poller.getDiffObservable();
@@ -40,6 +48,83 @@ let subscription = diffs$
 
 poller.start();
 ```
+
+
+## Polling a website that requires user authentication
+``` javascript
+const Poller = require('multiple-url-poller').Poller;
+
+let interval = 5 * 1000;  // time in ms
+let requests = [{
+  url: 'https://supersecurewebsite.com/guarded-resource',
+  auth: {
+    user: 'username',
+    pass: 'secretpassword'
+  }
+}];
+let poller = new Poller({ interval, requests });
+let diffs$ = poller.getDiffObservable();
+let subscription = diffs$
+  .subscribe(changesNotification => console.log('New diff', changesNotification.diff));
+
+poller.start();
+```
+
+# Documentation
+The idea of this poller is to fetch contents of websites in certain intervals and
+compare consecutive ones to check whether any changes were introduces to those websites.
+
+One use case of such a package is an email notifier for college test results.
+In my college we usually do not get notified at all about the results from tests,
+so by setting up this poller to query lectrers' websites I can send myself (and other people
+from my class) email (using _nodemailer_) about the results.
+
+The only thing exposed in this package is the `Poller` class:
+* `new Poller(options)` - creates a new poller instance. It has to be started
+with the `start` method.
+
+  Possible options:
+  * `interval` (optional) - number of miliseconds between two consecutive polls.
+  The default is 60 seconds.
+  * `requests` - array of urls/request options that will be polled.
+  It may contain either urls as strings or options objects that comply with
+  the format expected by the `request` library (see [`request` library documentation]
+  for more information)
+
+Poller instance methods:
+* `start()` - begins polling. First batch of requests is sent immediately, each following
+batch of requests will be sent after the interval specified in the options provided
+when creating a poller.
+* `stop()` - stops the poller and clears the cache.
+* `pause()` - pauses the poller, resetting the interval.
+* `resume()` - resumes the poller after it has been paused. Same as with `start`,
+initial requests are sent immediately.
+* `getDiffObservable()` - returns the RxJS observable that all diffs will be emitted to.
+
+  Objects in the observable implement the following interface:
+  ``` typescript
+  interface ChangesNotification {
+    isInitialDiff: boolean;
+    requestOptions: string | Object; // the url/options that those changes came from
+    url: string; // the url extracted from requestOptions
+    diff: SingleDiff[]; // array of single diffs (see below)
+    body: string; // contents of the website
+  }
+  ```
+
+  The SingleDiff object is the same as the diff object from `js-diff` library.
+
+* `getErrorObservable()` - returns the RxJS observable that emits error upon request errors.
+
+  Objects in the observable implement the following interface:
+  ``` typescript
+  interface RequestError {
+    url: string;  // same as in ChangesNotification
+    requestOptions: string | Object;  // same as in ChangesNotification
+    error: Object;  // error emitted by the `request` library
+  }
+  ```
+
 
 
 
