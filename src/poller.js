@@ -40,6 +40,7 @@ export default class Poller {
   stop() {
     this.pause();
     this.isPaused = false;
+    this.comparator.getCache().clear();
   }
 
   pause() {
@@ -71,12 +72,11 @@ export default class Poller {
   }
 
   pollSingleUrl(requestOptions) {
+    let url = typeof requestOptions === 'object' ? requestOptions.url : requestOptions;
     this.request(requestOptions)
       .then((body) => {
-        let url = typeof requestOptions === 'object' ? requestOptions.url : requestOptions;
         let isInitialDiff = !this.comparator.has(requestOptions);
         let diff = this.comparator.diffAndUpdate(requestOptions, body);
-
         let anyUpdates = diff.some(singleDiff => singleDiff.added || singleDiff.removed);
         if (anyUpdates || isInitialDiff) {
           this.diffSubject.next({
@@ -88,7 +88,11 @@ export default class Poller {
           });
         }
       })
-      .catch(error => this.errorSubject.next(error));
+      .catch(error => this.errorSubject.next({
+        requestOptions,
+        error,
+        url,
+      }));
   }
 
   getDiffObservable() {
