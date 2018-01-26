@@ -7,12 +7,12 @@ export default class Comparator {
   }
 
   getDiff(key, newValue) {
-    let previousValue = this.cache.get(key) || '';
+    const previousValue = this.cache.get(key) || '';
     return this.jsDiff.diffTrimmedLines(previousValue, newValue);
   }
 
   diffAndUpdate(key, newValue) {
-    let diff = this.getDiff(key, newValue);
+    const diff = this.getDiff(key, newValue);
     this.cache.set(key, newValue);
     return diff;
   }

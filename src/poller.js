@@ -7,10 +7,9 @@ const pollerConfig = {
 };
 
 export default class Poller {
-
   constructor(
-    { interval = pollerConfig.defaultInterval, requests = [] } = { },
-    { request = requestPromise, comparator = new Comparator() } = { },
+    { interval = pollerConfig.defaultInterval, requests = [] } = {},
+    { request = requestPromise, comparator = new Comparator() } = {},
   ) {
     this.request = request;
     this.comparator = comparator;
@@ -22,6 +21,9 @@ export default class Poller {
 
     this.diffSubject = new Subject();
     this.errorSubject = new Subject();
+
+    this.pollUrls = this.pollUrls.bind(this);
+    this.pollSingleUrl = this.pollSingleUrl.bind(this);
   }
 
   start() {
@@ -34,7 +36,7 @@ export default class Poller {
 
     this.hasStarted = true;
     this.pollUrls();
-    this.intervalID = setInterval(this.pollUrls.bind(this), this.interval);
+    this.intervalID = setInterval(this.pollUrls, this.interval);
   }
 
   stop() {
@@ -62,37 +64,40 @@ export default class Poller {
     this.start();
   }
 
-
   pollUrls() {
     if (this.requests.length === 0) {
       this.pause();
     }
 
-    this.requests.forEach(this.pollSingleUrl.bind(this));
+    this.requests.forEach(this.pollSingleUrl);
   }
 
-  pollSingleUrl(requestOptions) {
-    let url = typeof requestOptions === 'object' ? requestOptions.url : requestOptions;
-    this.request(requestOptions)
-      .then((body) => {
-        let isInitialDiff = !this.comparator.has(requestOptions);
-        let diff = this.comparator.diffAndUpdate(requestOptions, body);
-        let anyUpdates = diff.some(singleDiff => singleDiff.added || singleDiff.removed);
-        if (anyUpdates || isInitialDiff) {
-          this.diffSubject.next({
-            isInitialDiff,
-            requestOptions,
-            url,
-            diff,
-            body,
-          });
-        }
-      })
-      .catch(error => this.errorSubject.next({
+  async pollSingleUrl(requestOptions) {
+    const url = typeof requestOptions === 'object' ? requestOptions.url : requestOptions;
+
+    try {
+      const body = await this.request(requestOptions);
+
+      const isInitialDiff = !this.comparator.has(requestOptions);
+      const diff = this.comparator.diffAndUpdate(requestOptions, body);
+      const anyUpdates = diff.some(singleDiff => singleDiff.added || singleDiff.removed);
+
+      if (anyUpdates || isInitialDiff) {
+        this.diffSubject.next({
+          isInitialDiff,
+          requestOptions,
+          url,
+          diff,
+          body,
+        });
+      }
+    } catch (error) {
+      this.errorSubject.next({
         requestOptions,
         error,
         url,
-      }));
+      });
+    }
   }
 
   getDiffObservable() {
