@@ -4,6 +4,7 @@
     "*.spec.js"
   ],
   "helpers": [
-    "../../node_modules/babel-core/register.js"
+    "../../node_modules/@babel/polyfill",
+    "../../node_modules/@babel/register/lib/index.js"
   ]
 }
